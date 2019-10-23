@@ -8,11 +8,11 @@ use pretty_assertions::{assert_eq, assert_ne};
 use sql_migration_connector::{AlterTable, CreateTable, PrettySqlMigrationStep, SqlFamily, SqlMigrationStep};
 use sql_schema_describer::Table;
 use test_harness::*;
+use migration_core::api::GenericApi;
 
-#[test]
-fn assume_to_be_applied_must_work() {
-    test_each_connector(|test_setup, api| {
-        let dm0 = r#"
+#[test_each_connector]
+async fn assume_to_be_applied_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
+    let dm0 = r#"
             model Blog {
                 id Int @id
             }
@@ -53,17 +53,15 @@ fn assume_to_be_applied_must_work() {
         assert_eq!(
             steps2,
             &[
-                expected_steps_1,
-                create_field_step("Blog", "field2", ScalarType::String)
+            expected_steps_1,
+            create_field_step("Blog", "field2", ScalarType::String)
             ]
         );
-    });
 }
 
-#[test]
-fn special_handling_of_watch_migrations() {
-    test_each_connector(|test_setup, api| {
-        let dm = r#"
+#[test_each_connector]
+async fn special_handling_of_watch_migrations(test_setup: &TestSetup, api: &dyn GenericApi) {
+    let dm = r#"
             model Blog {
                 id Int @id
             }
@@ -110,12 +108,11 @@ fn special_handling_of_watch_migrations() {
         assert_eq!(
             steps,
             &[
-                create_field_step("Blog", "field1", ScalarType::String),
-                create_field_step("Blog", "field2", ScalarType::String),
-                create_field_step("Blog", "field3", ScalarType::Int),
+            create_field_step("Blog", "field1", ScalarType::String),
+            create_field_step("Blog", "field2", ScalarType::String),
+            create_field_step("Blog", "field3", ScalarType::Int),
             ]
         );
-    });
 }
 
 /// When we transition out of watch mode and `lift save` the migrations to commit the changes to
@@ -123,9 +120,8 @@ fn special_handling_of_watch_migrations() {
 /// the migration README, even though they are already applied and will not be reapplied.
 ///
 /// Relevant issue: https://github.com/prisma/lift/issues/167
-#[test]
-fn watch_migrations_must_be_returned_when_transitioning_out_of_watch_mode() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn watch_migrations_must_be_returned_when_transitioning_out_of_watch_mode(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm = r#"
             model Blog {
                 id Int @id
@@ -185,12 +181,10 @@ fn watch_migrations_must_be_returned_when_transitioning_out_of_watch_mode() {
         let expected_steps_count = if test_setup.is_sqlite() { 9 } else { 3 }; // one AlterTable, two CreateTables
 
         assert_eq!(returned_steps.len(), expected_steps_count);
-    });
 }
 
-#[test]
-fn watch_migrations_must_be_returned_in_addition_to_regular_inferred_steps_when_transitioning_out_of_watch_mode() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn watch_migrations_must_be_returned_in_addition_to_regular_inferred_steps_when_transitioning_out_of_watch_mode(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm = r#"
             model Blog {
                 id Int @id
@@ -274,5 +268,4 @@ fn watch_migrations_must_be_returned_in_addition_to_regular_inferred_steps_when_
         };
 
         assert_eq!(returned_steps.len(), expected_steps_count);
-    });
 }

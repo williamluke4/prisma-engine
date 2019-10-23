@@ -5,10 +5,10 @@ use pretty_assertions::{assert_eq, assert_ne};
 use sql_migration_connector::{AlterIndex, CreateIndex, DropIndex, SqlFamily, SqlMigrationStep};
 use sql_schema_describer::*;
 use test_harness::*;
+use migration_core::api::GenericApi;
 
-#[test]
-fn adding_a_scalar_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_a_scalar_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm2 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -35,7 +35,6 @@ fn adding_a_scalar_field_must_work() {
         assert_eq!(table.column_bang("string").tpe.family, ColumnTypeFamily::String);
         assert_eq!(table.column_bang("dateTime").tpe.family, ColumnTypeFamily::DateTime);
         assert_eq!(table.column_bang("enum").tpe.family, ColumnTypeFamily::String);
-    });
 }
 
 //#[test]
@@ -62,9 +61,8 @@ fn adding_a_scalar_field_must_work() {
 //    });
 //}
 
-#[test]
-fn adding_an_optional_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_an_optional_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm2 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -74,12 +72,10 @@ fn adding_an_optional_field_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column = result.table_bang("Test").column_bang("field");
         assert_eq!(column.is_required(), false);
-    });
 }
 
-#[test]
-fn adding_an_id_field_with_a_special_name_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_an_id_field_with_a_special_name_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm2 = r#"
             model Test {
                 specialName String @id @default(cuid())
@@ -88,12 +84,10 @@ fn adding_an_id_field_with_a_special_name_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column = result.table_bang("Test").column("specialName");
         assert_eq!(column.is_some(), true);
-    });
 }
 
-#[test]
-fn adding_an_id_field_of_type_int_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_an_id_field_of_type_int_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm2 = r#"
             model Test {
                 myId Int @id
@@ -111,12 +105,10 @@ fn adding_an_id_field_of_type_int_must_work() {
             }
             _ => assert_eq!(column.auto_increment, true),
         }
-    });
 }
 
-#[test]
-fn removing_a_scalar_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn removing_a_scalar_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -135,12 +127,10 @@ fn removing_a_scalar_field_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column2 = result.table_bang("Test").column("field");
         assert_eq!(column2.is_some(), false);
-    });
 }
 
-#[test]
-fn can_handle_reserved_sql_keywords_for_model_name() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn can_handle_reserved_sql_keywords_for_model_name(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model Group {
                 id String @id @default(cuid())
@@ -160,12 +150,10 @@ fn can_handle_reserved_sql_keywords_for_model_name() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column = result.table_bang("Group").column_bang("field");
         assert_eq!(column.tpe.family, ColumnTypeFamily::Int);
-    });
 }
 
-#[test]
-fn can_handle_reserved_sql_keywords_for_field_name() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn can_handle_reserved_sql_keywords_for_field_name(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -185,12 +173,10 @@ fn can_handle_reserved_sql_keywords_for_field_name() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column = result.table_bang("Test").column_bang("Group");
         assert_eq!(column.tpe.family, ColumnTypeFamily::Int);
-    });
 }
 
-#[test]
-fn update_type_of_scalar_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn update_type_of_scalar_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -210,12 +196,10 @@ fn update_type_of_scalar_field_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let column2 = result.table_bang("Test").column_bang("field");
         assert_eq!(column2.tpe.family, ColumnTypeFamily::Int);
-    });
 }
 
-#[test]
-fn changing_the_type_of_an_id_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn changing_the_type_of_an_id_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -271,12 +255,10 @@ fn changing_the_type_of_an_id_field_must_work() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn updating_db_name_of_a_scalar_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn updating_db_name_of_a_scalar_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id String @id @default(cuid())
@@ -295,13 +277,11 @@ fn updating_db_name_of_a_scalar_field_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         assert_eq!(result.table_bang("A").column("name1").is_some(), false);
         assert_eq!(result.table_bang("A").column("name2").is_some(), true);
-    });
 }
 
-#[test]
-fn changing_a_relation_field_to_a_scalar_field_must_work() {
+#[test_each_connector(ignore = "Mysql")]
+async fn changing_a_relation_field_to_a_scalar_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
     // this relies on link: INLINE which we don't support yet
-    test_each_connector_with_ignores(&[SqlFamily::Mysql], |test_setup, api| {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -345,12 +325,10 @@ fn changing_a_relation_field_to_a_scalar_field_must_work() {
         let column = table.column_bang("b");
         assert_eq!(column.tpe.family, ColumnTypeFamily::String);
         assert_eq!(table.foreign_keys, vec![]);
-    });
 }
 
-#[test]
-fn changing_a_scalar_field_to_a_relation_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn changing_a_scalar_field_to_a_relation_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -394,13 +372,11 @@ fn changing_a_scalar_field_to_a_relation_field_must_work() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn adding_a_many_to_many_relation_must_result_in_a_prisma_style_relation_table() {
+#[test_each_connector]
+async fn adding_a_many_to_many_relation_must_result_in_a_prisma_style_relation_table(test_setup: &TestSetup, api: &dyn GenericApi) {
     // TODO: one model should have an id of different type. Not possible right now due to barrel limitation.
-    test_each_connector(|test_setup, api| {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -448,12 +424,10 @@ fn adding_a_many_to_many_relation_must_result_in_a_prisma_style_relation_table()
                 },
             ]
         );
-    });
 }
 
-#[test]
-fn adding_a_many_to_many_relation_with_custom_name_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_a_many_to_many_relation_with_custom_name_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -476,7 +450,7 @@ fn adding_a_many_to_many_relation_with_custom_name_must_work() {
 
         assert_eq!(
             relation_table.foreign_keys,
-            vec![
+            &[
                 ForeignKey {
                     constraint_name: match test_setup.sql_family {
                         SqlFamily::Postgres => Some("_my_relation_A_fkey".to_owned()),
@@ -501,7 +475,6 @@ fn adding_a_many_to_many_relation_with_custom_name_must_work() {
                 }
             ]
         );
-    });
 }
 
 #[test]
@@ -532,9 +505,8 @@ fn providing_an_explicit_link_table_must_work() {
     unimplemented!();
 }
 
-#[test]
-fn adding_an_inline_relation_must_result_in_a_foreign_key_in_the_model_table() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_an_inline_relation_must_result_in_a_foreign_key_in_the_model_table(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -563,12 +535,10 @@ fn adding_an_inline_relation_must_result_in_a_foreign_key_in_the_model_table() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn specifying_a_db_name_for_an_inline_relation_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn specifying_a_db_name_for_an_inline_relation_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -597,12 +567,10 @@ fn specifying_a_db_name_for_an_inline_relation_must_work() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn adding_an_inline_relation_to_a_model_with_an_exotic_id_type() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_an_inline_relation_to_a_model_with_an_exotic_id_type(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -631,12 +599,10 @@ fn adding_an_inline_relation_to_a_model_with_an_exotic_id_type() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn removing_an_inline_relation_must_work() {
-    test_each_connector_with_ignores(vec![SqlFamily::Mysql], |test_setup, api| {
+#[test_each_connector(ignore = "Mysql")]
+async fn removing_an_inline_relation_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -663,12 +629,10 @@ fn removing_an_inline_relation_must_work() {
         let result = dbg!(infer_and_apply(test_setup, api, &dm2).sql_schema);
         let column = result.table_bang("A").column("b");
         assert_eq!(column.is_some(), false);
-    });
 }
 
-#[test]
-fn moving_an_inline_relation_to_the_other_side_must_work() {
-    test_each_connector_with_ignores(vec![SqlFamily::Mysql], |test_setup, api| {
+#[test_each_connector(ignore = "Mysql")]
+async fn moving_an_inline_relation_to_the_other_side_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -722,12 +686,10 @@ fn moving_an_inline_relation_to_the_other_side_must_work() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn adding_a_new_unique_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_a_new_unique_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -738,12 +700,10 @@ fn adding_a_new_unique_field_must_work() {
         let index = result.table_bang("A").indices.iter().find(|i| i.columns == &["field"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn adding_new_fields_with_multi_column_unique_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_new_fields_with_multi_column_unique_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -761,12 +721,10 @@ fn adding_new_fields_with_multi_column_unique_must_work() {
             .find(|i| i.columns == vec!["field", "secondField"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn unique_in_conjunction_with_custom_column_name_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn unique_in_conjunction_with_custom_column_name_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -781,12 +739,10 @@ fn unique_in_conjunction_with_custom_column_name_must_work() {
             .find(|i| i.columns == &["custom_field_name"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn multi_column_unique_in_conjunction_with_custom_column_name_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn multi_column_unique_in_conjunction_with_custom_column_name_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -804,14 +760,12 @@ fn multi_column_unique_in_conjunction_with_custom_column_name_must_work() {
             .find(|i| i.columns == &["custom_field_name", "second_custom_field_name"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn sqlite_must_recreate_indexes() {
+#[test_each_connector]
+async fn sqlite_must_recreate_indexes(test_setup: &TestSetup, api: &dyn GenericApi) {
     // SQLite must go through a complicated migration procedure which requires dropping and recreating indexes. This test checks that.
     // We run them still against each connector.
-    test_each_connector(|test_setup, api| {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -842,14 +796,12 @@ fn sqlite_must_recreate_indexes() {
             .find(|i| i.columns == vec!["field"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn sqlite_must_recreate_multi_field_indexes() {
+#[test_each_connector]
+async fn sqlite_must_recreate_multi_field_indexes(test_setup: &TestSetup, api: &dyn GenericApi) {
     // SQLite must go through a complicated migration procedure which requires dropping and recreating indexes. This test checks that.
     // We run them still against each connector.
-    test_each_connector(|test_setup, api| {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -886,13 +838,11 @@ fn sqlite_must_recreate_multi_field_indexes() {
             .find(|i| i.columns == &["field", "secondField"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn removing_an_existing_unique_field_must_work() {
+#[test_each_connector]
+async fn removing_an_existing_unique_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
     //    test_only_connector(SqlFamily::Postgres, |test_setup, api| {
-    test_each_connector(|test_setup, api| {
         let dm1 = r#"
             model A {
                 id    Int    @id
@@ -920,12 +870,10 @@ fn removing_an_existing_unique_field_must_work() {
             .iter()
             .find(|i| i.columns == vec!["field"]);
         assert_eq!(index.is_some(), false);
-    });
 }
 
-#[test]
-fn adding_unique_to_an_existing_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_unique_to_an_existing_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id    Int    @id
@@ -954,13 +902,10 @@ fn adding_unique_to_an_existing_field_must_work() {
             .find(|i| i.columns == vec!["field"]);
         assert!(index.is_some());
         assert_eq!(index.unwrap().tpe, IndexType::Unique);
-    });
 }
 
-#[test]
-fn removing_unique_from_an_existing_field_must_work() {
-    //    test_only_connector(SqlFamily::Postgres, |test_setup, api| {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn removing_unique_from_an_existing_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id    Int    @id
@@ -981,12 +926,10 @@ fn removing_unique_from_an_existing_field_must_work() {
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
         let index = result.table_bang("A").indices.iter().find(|i| i.columns == &["field"]);
         assert!(!index.is_some());
-    });
 }
 
-#[test]
-fn removing_multi_field_unique_index_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn removing_multi_field_unique_index_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id    Int    @id
@@ -1019,12 +962,10 @@ fn removing_multi_field_unique_index_must_work() {
             .iter()
             .find(|i| i.columns == &["field", "secondField"]);
         assert!(index.is_none());
-    });
 }
 
-#[test]
-fn index_renaming_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn index_renaming_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1071,24 +1012,10 @@ fn index_renaming_must_work() {
             let actual_steps = result.sql_migration();
             assert_eq!(actual_steps, expected_steps);
         }
-    });
-}
-
-#[test_each_connector(only = "me")]
-async fn testtest() {
-
 }
 
 #[test_each_connector]
-async fn testtest() {
-
-}
-
-
-
-#[test]
-fn index_renaming_must_work_when_renaming_to_default() {
-    test_each_connector(|test_setup, api| {
+async fn index_renaming_must_work_when_renaming_to_default(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1136,12 +1063,10 @@ fn index_renaming_must_work_when_renaming_to_default() {
             let actual_steps = result.sql_migration();
             assert_eq!(actual_steps, expected_steps);
         }
-    });
 }
 
-#[test]
-fn index_renaming_must_work_when_renaming_to_custom() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn index_renaming_must_work_when_renaming_to_custom(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1189,12 +1114,10 @@ fn index_renaming_must_work_when_renaming_to_custom() {
             let actual_steps = result.sql_migration();
             assert_eq!(actual_steps, expected_steps);
         }
-    });
 }
 
-#[test]
-fn index_updates_with_rename_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn index_updates_with_rename_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1250,12 +1173,10 @@ fn index_updates_with_rename_must_work() {
             let actual_steps = result.sql_migration();
             assert_eq!(actual_steps, expected_steps);
         }
-    });
 }
 
-#[test]
-fn dropping_a_model_with_a_multi_field_unique_index_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn dropping_a_model_with_a_multi_field_unique_index_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1276,12 +1197,10 @@ fn dropping_a_model_with_a_multi_field_unique_index_must_work() {
 
         let dm2 = r#""#;
         infer_and_apply(test_setup, api, &dm2);
-    })
 }
 
-#[test]
-fn adding_a_scalar_list_for_a_modelwith_id_type_int_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn adding_a_scalar_list_for_a_modelwith_id_type_int_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm1 = r#"
             model A {
                 id Int @id
@@ -1309,12 +1228,10 @@ fn adding_a_scalar_list_for_a_modelwith_id_type_int_must_work() {
             scalar_list_table_for_enums.primary_key_columns(),
             vec!["nodeId", "position"]
         );
-    });
 }
 
-#[test]
-fn updating_a_model_with_a_scalar_list_to_a_different_id_type_must_work() {
-    test_each_connector_with_ignores(vec![SqlFamily::Mysql], |test_setup, api| {
+#[test_each_connector(ignore = "Mysql")]
+async fn updating_a_model_with_a_scalar_list_to_a_different_id_type_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let dm = r#"
             model A {
                 id Int @id
@@ -1334,13 +1251,11 @@ fn updating_a_model_with_a_scalar_list_to_a_different_id_type_must_work() {
         let result = infer_and_apply(test_setup, api, &dm).sql_schema;
         let node_id_column = result.table_bang("A_strings").column_bang("nodeId");
         assert_eq!(node_id_column.tpe.family, ColumnTypeFamily::String);
-    });
 }
 
-#[test]
-fn reserved_sql_key_words_must_work() {
+#[test_each_connector]
+async fn reserved_sql_key_words_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
     // Group is a reserved keyword
-    test_each_connector(|test_setup, api| {
         let sql_family = test_setup.sql_family;
         let dm = r#"
             model Group {
@@ -1367,13 +1282,11 @@ fn reserved_sql_key_words_must_work() {
                 on_delete_action: ForeignKeyAction::SetNull,
             }]
         );
-    });
 }
 
-#[test]
-fn migrations_with_many_to_many_related_models_must_not_recreate_indexes() {
+#[test_each_connector]
+async fn migrations_with_many_to_many_related_models_must_not_recreate_indexes(test_setup: &TestSetup, api: &dyn GenericApi) {
     // test case for https://github.com/prisma/lift/issues/148
-    test_each_connector(|test_setup, api| {
         let dm_1 = r#"
             model User {
                 id        String  @default(cuid()) @id
@@ -1428,12 +1341,10 @@ fn migrations_with_many_to_many_related_models_must_not_recreate_indexes() {
             .find(|index| index.name == "_ProfileToSkill_AB_unique")
             .expect("index is present");
         assert_eq!(index.tpe, IndexType::Unique);
-    })
 }
 
-#[test]
-fn removing_a_relation_field_must_work() {
-    test_each_connector(|test_setup, api| {
+#[test_each_connector]
+async fn removing_a_relation_field_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         let sql_family = test_setup.sql_family;
 
         let dm_1 = r#"
@@ -1478,5 +1389,4 @@ fn removing_a_relation_field_must_work() {
             .find(|col| col.name == "address_name");
 
         assert!(address_name_field.is_none());
-    })
 }
