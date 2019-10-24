@@ -37,7 +37,8 @@ impl MigrationCommand for UnapplyMigrationCommand {
 
                 connector
                     .migration_applier()
-                    .unapply(&migration_to_rollback, &database_migration).await?;
+                    .unapply(&migration_to_rollback, &database_migration)
+                    .await?;
 
                 let new_active_migration = connector.migration_persistence().last().await.map(|m| m.name);
 

@@ -110,7 +110,10 @@ async fn steps_equivalence_criteria_is_satisfied_when_leaving_watch_mode(test_se
 }
 
 #[test_each_connector]
-async fn must_handle_additional_steps_when_transitioning_out_of_watch_mode(test_setup: &TestSetup, api: &dyn GenericApi) {
+async fn must_handle_additional_steps_when_transitioning_out_of_watch_mode(
+    test_setup: &TestSetup,
+    api: &dyn GenericApi,
+) {
     let migration_persistence = api.migration_persistence();
 
     let steps1 = vec![

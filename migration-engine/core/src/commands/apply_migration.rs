@@ -59,7 +59,10 @@ impl ApplyMigrationCommand {
         self.handle_migration(&engine, current_datamodel, next_datamodel).await
     }
 
-    async fn handle_normal_migration<C, D>(&self, engine: &MigrationEngine<C, D>) -> CommandResult<MigrationStepsResultOutput>
+    async fn handle_normal_migration<C, D>(
+        &self,
+        engine: &MigrationEngine<C, D>,
+    ) -> CommandResult<MigrationStepsResultOutput>
     where
         C: MigrationConnector<DatabaseMigration = D>,
         D: DatabaseMigrationMarker + Send + Sync + 'static,
@@ -113,7 +116,8 @@ impl ApplyMigrationCommand {
 
                 connector
                     .migration_applier()
-                    .apply(&saved_migration, &database_migration).await?;
+                    .apply(&saved_migration, &database_migration)
+                    .await?;
             }
             // We have warnings, but no force flag was passed.
             (true, false) => (),
