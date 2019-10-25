@@ -3,8 +3,9 @@ mod test_harness;
 use pretty_assertions::assert_eq;
 use test_harness::*;
 
-#[test_each_connector]
-async fn unapply_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
+#[test]
+fn unapply_must_work() {
+    test_each_connector(|test_setup, api| {
         let dm1 = r#"
             model Test {
                 id String @id @default(cuid())
@@ -30,4 +31,5 @@ async fn unapply_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
         // reapply the migration again
         let result4 = infer_and_apply(test_setup, api, &dm2).sql_schema;
         assert_eq!(result2, result4);
+    });
 }

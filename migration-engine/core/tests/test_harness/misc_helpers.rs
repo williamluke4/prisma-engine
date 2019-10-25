@@ -1,5 +1,4 @@
 use datamodel;
-use futures::future::BoxFuture;
 use migration_connector::*;
 use migration_core::{
     api::{GenericApi, MigrationApi},
@@ -40,14 +39,14 @@ pub fn parse(datamodel_string: &str) -> datamodel::Datamodel {
 
 pub fn test_each_connector<F>(test_fn: F)
 where
-    F: for<'a> Fn(&'a TestSetup, &'a dyn GenericApi) -> BoxFuture<'a, ()> + std::panic::RefUnwindSafe,
+    F: Fn(&TestSetup, &dyn GenericApi) -> () + std::panic::RefUnwindSafe,
 {
     test_each_connector_with_ignores(Vec::new(), test_fn);
 }
 
 pub fn test_only_connector<F>(sql_family: SqlFamily, test_fn: F)
 where
-    F: for<'a> Fn(&'a TestSetup, &'a dyn GenericApi) -> BoxFuture<'a, ()> + std::panic::RefUnwindSafe,
+    F: Fn(&TestSetup, &dyn GenericApi) -> () + std::panic::RefUnwindSafe,
 {
     let all = &[SqlFamily::Postgres, SqlFamily::Mysql, SqlFamily::Sqlite];
     let ignores: Vec<SqlFamily> = all.iter().filter(|f| f != &&sql_family).map(|f| *f).collect();
@@ -76,7 +75,7 @@ fn mysql_migration_connector(database_url: &str) -> SqlMigrationConnector {
 
 pub fn test_each_connector_with_ignores<I: AsRef<[SqlFamily]>, F>(ignores: I, test_fn: F)
 where
-    F: for<'a> Fn(&'a TestSetup, &'a dyn GenericApi) -> BoxFuture<'a, ()> + std::panic::RefUnwindSafe,
+    F: Fn(&TestSetup, &dyn GenericApi) -> () + std::panic::RefUnwindSafe,
 {
     let ignores: &[SqlFamily] = ignores.as_ref();
     // POSTGRES
