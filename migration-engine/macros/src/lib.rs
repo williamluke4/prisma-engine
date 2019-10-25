@@ -49,9 +49,13 @@ pub fn test_each_connector(attr: TokenStream, input: TokenStream) -> TokenStream
     let setup = quote! {
         #[test]
         fn #test_fn_name() {
-            use futures::future::FutureExt;
+            use futures::future::{FutureExt, TryFutureExt};
+            use futures::compat::*;
 
-            test_each_connector(|a, b| #test_fn_impl_name(a, b).boxed())
+            test_each_connector(|a, b| {
+                let runtime = tokio2::runtime::Runtime::new().unwrap();
+                runtime.block_on(#test_fn_impl_name(a, b));
+            })
         }
 
         #test_function
