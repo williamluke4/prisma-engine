@@ -184,15 +184,17 @@ impl MigrationConnector for SqlMigrationConnector {
     async fn create_database(&self, db_name: &str) -> ConnectorResult<()> {
         match self.sql_family {
             SqlFamily::Postgres => {
+                let sql = format!("CREATE DATABASE \"{}\"", db_name);
                 self.database
-                    .query_raw("", &format!("CREATE DATABASE \"{}\"", db_name), &[])?;
+                    .query_raw("", &sql, &[]).await?;
 
                 Ok(())
             }
             SqlFamily::Sqlite => Ok(()),
             SqlFamily::Mysql => {
+                let sql = format!("CREATE DATABASE `{}`", db_name);
                 self.database
-                    .query_raw("", &format!("CREATE DATABASE `{}`", db_name), &[])?;
+                    .query_raw("", &sql, &[]).await?;
 
                 Ok(())
             }
@@ -218,7 +220,7 @@ impl MigrationConnector for SqlMigrationConnector {
 
                 debug!("{}", schema_sql);
 
-                self.database.query_raw("", &schema_sql, &[])?;
+                self.database.query_raw("", &schema_sql, &[]).await?;
             }
             SqlFamily::Mysql => {
                 let schema_sql = format!(
@@ -228,7 +230,7 @@ impl MigrationConnector for SqlMigrationConnector {
 
                 debug!("{}", schema_sql);
 
-                self.database.query_raw("", &schema_sql, &[])?;
+                self.database.query_raw("", &schema_sql, &[]).await?;
             }
         }
 

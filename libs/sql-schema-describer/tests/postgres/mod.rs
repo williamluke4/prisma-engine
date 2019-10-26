@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use super::SCHEMA;
 
 struct PostgresConnection {
-    client: Mutex<prisma_query::connector::PostgreSql>,
+    client: Mutex<prisma_query::postgres::Client>,
 }
 
 impl crate::SqlConnection for PostgresConnection {
@@ -16,7 +16,8 @@ impl crate::SqlConnection for PostgresConnection {
         _: &str,
         params: &[ParameterizedValue],
     ) -> prisma_query::Result<prisma_query::connector::ResultSet> {
-        self.client.lock().expect("self.client.lock").query_raw(sql, params)
+        let runtime = tokio2::runtime::Runtime::new().unwrap();
+        runtime.block_on(self.client.lock().expect("self.client.lock").query_raw(sql, params))
     }
 }
 
@@ -25,7 +26,7 @@ pub fn get_postgres_describer(sql: &str) -> postgres::SqlSchemaDescriber {
         Ok(_) => "test-db-postgres",
         Err(_) => "127.0.0.1",
     };
-    let mut client = ::postgres::Config::new()
+    let mut client = postgres::Config::new()
         .user("postgres")
         .password("prisma")
         .host(host)

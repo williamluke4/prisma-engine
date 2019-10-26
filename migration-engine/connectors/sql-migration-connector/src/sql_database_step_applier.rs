@@ -10,13 +10,14 @@ pub struct SqlDatabaseStepApplier {
 }
 
 #[allow(unused, dead_code)]
+#[async_trait::async_trait]
 impl DatabaseMigrationStepApplier<SqlMigration> for SqlDatabaseStepApplier {
-    fn apply_step(&self, database_migration: &SqlMigration, index: usize) -> ConnectorResult<bool> {
-        Ok(self.apply_next_step(&database_migration.corrected_steps, index)?)
+    async fn apply_step(&self, database_migration: &SqlMigration, index: usize) -> ConnectorResult<bool> {
+        Ok(self.apply_next_step(&database_migration.corrected_steps, index).await?)
     }
 
-    fn unapply_step(&self, database_migration: &SqlMigration, index: usize) -> ConnectorResult<bool> {
-        Ok(self.apply_next_step(&database_migration.rollback, index)?)
+    async fn unapply_step(&self, database_migration: &SqlMigration, index: usize) -> ConnectorResult<bool> {
+        Ok(self.apply_next_step(&database_migration.rollback, index).await?)
     }
 
     fn render_steps_pretty(&self, database_migration: &SqlMigration) -> ConnectorResult<Vec<serde_json::Value>> {
@@ -30,7 +31,7 @@ impl DatabaseMigrationStepApplier<SqlMigration> for SqlDatabaseStepApplier {
 }
 
 impl SqlDatabaseStepApplier {
-    fn apply_next_step(&self, steps: &Vec<SqlMigrationStep>, index: usize) -> SqlResult<bool> {
+    async fn apply_next_step(&self, steps: &Vec<SqlMigrationStep>, index: usize) -> SqlResult<bool> {
         let has_this_one = steps.get(index).is_some();
         if !has_this_one {
             return Ok(false);
@@ -43,7 +44,7 @@ impl SqlDatabaseStepApplier {
         let result = self.conn.query_raw(&self.schema_name, &sql_string, &[]);
 
         // TODO: this does not evaluate the results of SQLites PRAGMA foreign_key_check
-        result?;
+        result.await?;
 
         let has_more = steps.get(index + 1).is_some();
         Ok(has_more)

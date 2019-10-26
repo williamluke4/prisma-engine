@@ -26,6 +26,7 @@ fn adding_a_scalar_field_must_work() {
             }
         "#;
         let result = infer_and_apply(test_setup, api, &dm2).sql_schema;
+        test_setup.migration_persistence.load_all();
         let table = result.table_bang("Test");
         table.columns.iter().for_each(|c| assert_eq!(c.is_required(), true));
 

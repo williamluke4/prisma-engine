@@ -42,7 +42,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
 
     async fn reset(&self) {
         let sql_str = format!(r#"DELETE FROM "{}"."_Migration";"#, self.schema_name); // TODO: this is not vendor agnostic yet
-        self.connection.query_raw(&self.schema_name, &sql_str, &[]).ok();
+        self.connection.query_raw(&self.schema_name, &sql_str, &[]).await.ok();
 
         // TODO: this is the wrong place to do that
         match self.sql_family {
@@ -50,7 +50,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
                 let sql_str = format!(r#"DROP SCHEMA "{}" CASCADE;"#, self.schema_name);
                 debug!("{}", sql_str);
 
-                self.connection.query_raw(&self.schema_name, &sql_str, &[]).ok();
+                self.connection.query_raw(&self.schema_name, &sql_str, &[]).await.ok();
             }
             SqlFamily::Sqlite => {
                 if let Some(ref file_path) = self.file_path {
@@ -60,7 +60,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
             SqlFamily::Mysql => {
                 let sql_str = format!(r#"DROP SCHEMA `{}`;"#, self.schema_name);
                 debug!("{}", sql_str);
-                self.connection.query_raw(&self.schema_name, &sql_str, &[]).ok();
+                self.connection.query_raw(&self.schema_name, &sql_str, &[]).await.ok();
             }
         }
     }
@@ -71,14 +71,14 @@ impl MigrationPersistence for SqlMigrationPersistence {
             .so_that(conditions)
             .order_by(REVISION_COLUMN.descend());
 
-        let result_set = self.connection.query(&self.schema_name, query.into()).unwrap();
+        let result_set = self.connection.query(&self.schema_name, query.into()).await.unwrap();
         parse_rows_new(result_set).into_iter().next()
     }
 
     async fn load_all(&self) -> Vec<Migration> {
         let query = Select::from_table(self.table()).order_by(REVISION_COLUMN.ascend());
 
-        let result_set = self.connection.query(&self.schema_name, query.into()).unwrap();
+        let result_set = self.connection.query(&self.schema_name, query.into()).await.unwrap();
         parse_rows_new(result_set)
     }
 
@@ -88,7 +88,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
             .so_that(conditions)
             .order_by(REVISION_COLUMN.descend());
 
-        let result_set = self.connection.query(&self.schema_name, query.into()).unwrap();
+        let result_set = self.connection.query(&self.schema_name, query.into()).await.unwrap();
         parse_rows_new(result_set).into_iter().next()
     }
 
@@ -113,7 +113,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
 
         match self.sql_family {
             SqlFamily::Sqlite | SqlFamily::Mysql => {
-                let id = self.connection.execute(&self.schema_name, insert.into()).unwrap();
+                let id = self.connection.execute(&self.schema_name, insert.into()).await.unwrap();
                 match id {
                     Some(prisma_query::ast::Id::Int(id)) => cloned.revision = id,
                     _ => panic!("This insert must return an int"),
@@ -124,6 +124,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
                 let result_set = self
                     .connection
                     .query(&self.schema_name, returning_insert.into())
+                    .await
                     .unwrap();
                 result_set.into_iter().next().map(|row| {
                     cloned.revision = row["revision"].as_i64().unwrap() as usize;
@@ -152,7 +153,7 @@ impl MigrationPersistence for SqlMigrationPersistence {
                     .and(REVISION_COLUMN.equals(params.revision)),
             );
 
-        self.connection.query(&self.schema_name, query.into()).unwrap();
+        self.connection.query(&self.schema_name, query.into()).await.unwrap();
     }
 }
 

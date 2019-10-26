@@ -17,7 +17,8 @@ impl crate::SqlConnection for SqliteConnection {
         _schema: &str,
         params: &[ParameterizedValue],
     ) -> prisma_query::Result<prisma_query::connector::ResultSet> {
-        self.client.lock().expect("self.client.lock").query_raw(sql, params)
+        let rt = tokio::runtime::Runtime::new();
+        rt.block_on(self.client.lock().expect("self.client.lock").query_raw(sql, params))
     }
 }
 

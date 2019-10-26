@@ -8,31 +8,31 @@ use migration_core::api::GenericApi;
 
 #[test_each_connector]
 async fn single_watch_migrations_must_work(test_setup: &TestSetup, api: &dyn GenericApi) {
-        let migration_persistence = api.migration_persistence();
+    let migration_persistence = api.migration_persistence();
 
-        let steps = vec![
-            create_model_step("Test"),
-            create_id_field_step("Test", "id", ScalarType::Int),
-        ];
+    let steps = vec![
+        create_model_step("Test"),
+        create_id_field_step("Test", "id", ScalarType::Int),
+    ];
 
-        let db_schema_1 = apply_migration(test_setup, api, steps.clone(), "watch-0001").sql_schema;
-        let migrations = migration_persistence.load_all().await;
+    let db_schema_1 = apply_migration(test_setup, api, steps.clone(), "watch-0001").sql_schema;
+    let migrations = migration_persistence.load_all().await;
 
-        assert_eq!(migrations.len(), 1);
-        assert_eq!(migrations.first().unwrap().name, "watch-0001");
+    assert_eq!(migrations.len(), 1);
+    assert_eq!(migrations.first().unwrap().name, "watch-0001");
 
-        let custom_migration_id = "a-custom-migration-id";
-        let db_schema_2 = apply_migration(test_setup, api, steps.clone(), custom_migration_id).sql_schema;
+    let custom_migration_id = "a-custom-migration-id";
+    let db_schema_2 = apply_migration(test_setup, api, steps.clone(), custom_migration_id).sql_schema;
 
-        assert_eq!(db_schema_1, db_schema_2);
+    assert_eq!(db_schema_1, db_schema_2);
 
-        let migrations = migration_persistence.load_all().await;
+    let migrations = migration_persistence.load_all().await;
 
-        assert_eq!(migrations.len(), 2);
-        assert_eq!(migrations[0].name, "watch-0001");
-        assert_eq!(migrations[1].name, custom_migration_id);
-        assert_eq!(migrations[1].status, MigrationStatus::MigrationSuccess);
-        assert!(migrations[1].finished_at.is_some());
+    assert_eq!(migrations.len(), 2);
+    assert_eq!(migrations[0].name, "watch-0001");
+    assert_eq!(migrations[1].name, custom_migration_id);
+    assert_eq!(migrations[1].status, MigrationStatus::MigrationSuccess);
+    assert!(migrations[1].finished_at.is_some());
 }
 
 #[test_each_connector]

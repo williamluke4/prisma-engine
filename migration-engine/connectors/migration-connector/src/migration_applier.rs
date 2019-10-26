@@ -25,7 +25,7 @@ where T: Send + Sync + 'static {
         migration_updates.status = MigrationStatus::MigrationInProgress;
         self.migration_persistence.update(&migration_updates).await;
 
-        let apply_result = self.go_forward(&mut migration_updates, database_migration);
+        let apply_result = self.go_forward(&mut migration_updates, database_migration).await;
 
         match apply_result {
             Ok(()) => {
@@ -48,7 +48,7 @@ where T: Send + Sync + 'static {
         migration_updates.status = MigrationStatus::RollingBack;
         self.migration_persistence.update(&migration_updates).await;
 
-        let unapply_result = self.go_backward(&mut migration_updates, database_migration);
+        let unapply_result = self.go_backward(&mut migration_updates, database_migration).await;
 
         match unapply_result {
             Ok(()) => {
@@ -67,26 +67,26 @@ where T: Send + Sync + 'static {
 }
 
 impl<T: 'static> MigrationApplierImpl<T> {
-    fn go_forward(&self, migration_updates: &mut MigrationUpdateParams, database_migration: &T) -> ConnectorResult<()> {
+    async fn go_forward(&self, migration_updates: &mut MigrationUpdateParams, database_migration: &T) -> ConnectorResult<()> {
         let mut step = 0;
-        while self.step_applier.apply_step(&database_migration, step)? {
+        while self.step_applier.apply_step(&database_migration, step).await? {
             step += 1;
             migration_updates.applied += 1;
-            self.migration_persistence.update(&migration_updates);
+            self.migration_persistence.update(&migration_updates).await;
         }
         Ok(())
     }
 
-    fn go_backward(
+    async fn go_backward(
         &self,
         migration_updates: &mut MigrationUpdateParams,
         database_migration: &T,
     ) -> ConnectorResult<()> {
         let mut step = 0;
-        while self.step_applier.unapply_step(&database_migration, step)? {
+        while self.step_applier.unapply_step(&database_migration, step).await? {
             step += 1;
             migration_updates.rolled_back += 1;
-            self.migration_persistence.update(&migration_updates);
+            self.migration_persistence.update(&migration_updates).await;
         }
         Ok(())
     }

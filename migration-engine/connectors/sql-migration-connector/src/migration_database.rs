@@ -1,7 +1,8 @@
+use async_trait::async_trait;
 use prisma_query::{
     ast::*,
     connector::{self, MysqlParams, PostgresParams, Queryable, ResultSet, SqliteParams},
-    pool::{mysql::*, postgres::*, sqlite::*, PrismaConnectionManager},
+    // pool::{mysql::*, postgres::*, sqlite::*, PrismaConnectionManager},
 };
 use std::{
     convert::TryFrom,
@@ -10,11 +11,12 @@ use std::{
     time::Duration,
 };
 
+#[async_trait]
 pub trait MigrationDatabase: Send + Sync + 'static {
-    fn execute(&self, db: &str, q: Query) -> prisma_query::Result<Option<Id>>;
-    fn query(&self, db: &str, q: Query) -> prisma_query::Result<ResultSet>;
-    fn query_raw(&self, db: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<ResultSet>;
-    fn execute_raw(&self, db: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<u64>;
+    async fn execute<'a>(&'a self, db: &str, q: Query<'a>) -> prisma_query::Result<Option<Id>>;
+    async fn query<'a>(&'a self, db: &str, q: Query<'a>) -> prisma_query::Result<ResultSet>;
+    async fn query_raw<'a>(&'a self, db: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<ResultSet>;
+    async fn execute_raw<'a>(&'a self, db: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<u64>;
 }
 
 pub struct MigrationDatabaseWrapper {
@@ -28,7 +30,8 @@ impl sql_schema_describer::SqlConnection for MigrationDatabaseWrapper {
         schema: &str,
         params: &[ParameterizedValue],
     ) -> prisma_query::Result<prisma_query::connector::ResultSet> {
-        self.database.query_raw(schema, sql, params)
+        unimplemented!()
+        // self.database.query_raw(schema, sql, params)
     }
 }
 
@@ -43,16 +46,17 @@ pub struct Sqlite {
 
 impl Sqlite {
     pub fn new(url: &str) -> prisma_query::Result<Self> {
-        let params = SqliteParams::try_from(url)?;
-        let file_path = params.file_path.to_str().unwrap().to_string();
-        let manager = PrismaConnectionManager::sqlite(None, &file_path)?;
+        unimplemented!()
+        // let params = SqliteParams::try_from(url)?;
+        // let file_path = params.file_path.to_str().unwrap().to_string();
+        // let manager = PrismaConnectionManager::sqlite(None, &file_path)?;
 
-        let pool = r2d2::Pool::builder()
-            .max_size(2)
-            .test_on_check_out(false)
-            .build(manager)?;
+        // let pool = r2d2::Pool::builder()
+        //     .max_size(2)
+        //     .test_on_check_out(false)
+        //     .build(manager)?;
 
-        Ok(Self { pool, file_path })
+        // Ok(Self { pool, file_path })
     }
 
     fn with_connection<F, T>(&self, db: &str, f: F) -> T
@@ -79,21 +83,26 @@ impl Sqlite {
     }
 }
 
+#[async_trait]
 impl MigrationDatabase for Sqlite {
-    fn execute(&self, db: &str, q: Query) -> prisma_query::Result<Option<Id>> {
-        self.with_connection(db, |conn| conn.execute(q))
+    async fn execute<'a>(&'a self, db: &str, q: Query<'a>) -> prisma_query::Result<Option<Id>> {
+        // self.with_connection(db, |conn| conn.execute(q))
+        unimplemented!()
     }
 
-    fn query(&self, db: &str, q: Query) -> prisma_query::Result<ResultSet> {
-        self.with_connection(db, |conn| conn.query(q))
+    async fn query<'a>(&'a self, db: &str, q: Query<'a>) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(db, |conn| conn.query(q))
+        unimplemented!()
     }
 
-    fn query_raw(&self, db: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<ResultSet> {
-        self.with_connection(db, |conn| conn.query_raw(sql, params))
+    async fn query_raw<'a>(&'a self, db: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(db, |conn| conn.query_raw(sql, params))
+        unimplemented!()
     }
 
-    fn execute_raw(&self, db: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<u64> {
-        self.with_connection(db, |conn| conn.execute_raw(sql, params))
+    async fn execute_raw<'a>(&'a self, db: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<u64> {
+        // self.with_connection(db, |conn| conn.execute_raw(sql, params))
+        unimplemented!()
     }
 }
 
@@ -108,22 +117,23 @@ pub struct PostgreSql {
 
 impl PostgreSql {
     pub fn new(params: PostgresParams, pooled: bool) -> prisma_query::Result<Self> {
-        let conn = if pooled {
-            let manager = PrismaConnectionManager::postgres(params.config, Some(params.schema))?;
+        unimplemented!()
+        // let conn = if pooled {
+        //     let manager = PrismaConnectionManager::postgres(params.config, Some(params.schema))?;
 
-            let pool = r2d2::Pool::builder()
-                .max_size(2)
-                .connection_timeout(Duration::from_millis(1500))
-                .test_on_check_out(false)
-                .build(manager)?;
+        //     let pool = r2d2::Pool::builder()
+        //         .max_size(2)
+        //         .connection_timeout(Duration::from_millis(1500))
+        //         .test_on_check_out(false)
+        //         .build(manager)?;
 
-            PostgresConnection::Pooled(pool)
-        } else {
-            let conn = connector::PostgreSql::from_params(params)?;
-            PostgresConnection::Single(Mutex::new(conn))
-        };
+        //     PostgresConnection::Pooled(pool)
+        // } else {
+        //     let conn = connector::PostgreSql::from_params(params).await?;
+        //     PostgresConnection::Single(Mutex::new(conn))
+        // };
 
-        Ok(Self { conn })
+        // Ok(Self { conn })
     }
 
     fn with_connection<F, T>(&self, f: F) -> T
@@ -140,21 +150,26 @@ impl PostgreSql {
     }
 }
 
+#[async_trait]
 impl MigrationDatabase for PostgreSql {
-    fn execute(&self, _: &str, q: Query) -> prisma_query::Result<Option<Id>> {
-        self.with_connection(|conn| conn.execute(q))
+    async fn execute<'a>(&'a self, _: &str, q: Query<'a>) -> prisma_query::Result<Option<Id>> {
+        // self.with_connection(|conn| conn.execute(q))
+        unimplemented!()
     }
 
-    fn query(&self, _: &str, q: Query) -> prisma_query::Result<ResultSet> {
-        self.with_connection(|conn| conn.query(q))
+    async fn query<'a>(&'a self, _: &str, q: Query<'a>) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(|conn| conn.query(q))
+        unimplemented!()
     }
 
-    fn query_raw(&self, _: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<ResultSet> {
-        self.with_connection(|conn| conn.query_raw(sql, params))
+    async fn query_raw<'a>(&'a self, _: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(|conn| conn.query_raw(sql, params))
+        unimplemented!()
     }
 
-    fn execute_raw(&self, _: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<u64> {
-        self.with_connection(|conn| conn.execute_raw(sql, params))
+    async fn execute_raw<'a>(&'a self, _: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<u64> {
+        // self.with_connection(|conn| conn.execute_raw(sql, params))
+        unimplemented!()
     }
 }
 
@@ -169,22 +184,23 @@ pub struct Mysql {
 
 impl Mysql {
     pub fn new(params: MysqlParams, pooled: bool) -> prisma_query::Result<Self> {
-        let conn = if pooled {
-            let manager = PrismaConnectionManager::mysql(params.config);
+        unimplemented!()
+        // let conn = if pooled {
+        //     let manager = PrismaConnectionManager::mysql(params.config);
 
-            let pool = r2d2::Pool::builder()
-                .connection_timeout(Duration::from_millis(1500))
-                .max_size(2)
-                .test_on_check_out(false)
-                .build(manager)?;
+        //     let pool = r2d2::Pool::builder()
+        //         .connection_timeout(Duration::from_millis(1500))
+        //         .max_size(2)
+        //         .test_on_check_out(false)
+        //         .build(manager)?;
 
-            MysqlConnection::Pooled(pool)
-        } else {
-            let conn = connector::Mysql::from_params(params)?;
-            MysqlConnection::Single(Mutex::new(conn))
-        };
+        //     MysqlConnection::Pooled(pool)
+        // } else {
+        //     let conn = connector::Mysql::from_params(params)?;
+        //     MysqlConnection::Single(Mutex::new(conn))
+        // };
 
-        Ok(Self { conn })
+        // Ok(Self { conn })
     }
 
     fn with_connection<F, T>(&self, f: F) -> T
@@ -201,20 +217,25 @@ impl Mysql {
     }
 }
 
+#[async_trait]
 impl MigrationDatabase for Mysql {
-    fn execute(&self, _: &str, q: Query) -> prisma_query::Result<Option<Id>> {
-        self.with_connection(|conn| conn.execute(q))
+    async fn execute<'a>(&'a self, _: &str, q: Query<'a>) -> prisma_query::Result<Option<Id>> {
+        // self.with_connection(|conn| conn.execute(q))
+        unimplemented!()
     }
 
-    fn query(&self, _: &str, q: Query) -> prisma_query::Result<ResultSet> {
-        self.with_connection(|conn| conn.query(q))
+    async fn query<'a>(&'a self, _: &str, q: Query<'a>) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(|conn| conn.query(q))
+        unimplemented!()
     }
 
-    fn query_raw(&self, _: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<ResultSet> {
-        self.with_connection(|conn| conn.query_raw(sql, params))
+    async fn query_raw<'a>(&'a self, _: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<ResultSet> {
+        // self.with_connection(|conn| conn.query_raw(sql, params))
+        unimplemented!()
     }
 
-    fn execute_raw(&self, _: &str, sql: &str, params: &[ParameterizedValue]) -> prisma_query::Result<u64> {
-        self.with_connection(|conn| conn.execute_raw(sql, params))
+    async fn execute_raw<'a>(&'a self, _: &str, sql: &str, params: &[ParameterizedValue<'a>]) -> prisma_query::Result<u64> {
+        // self.with_connection(|conn| conn.execute_raw(sql, params))
+        unimplemented!()
     }
 }
