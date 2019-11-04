@@ -11,13 +11,14 @@ pub(super) fn render_error(crate_error: CrateError) -> Error {
         message: format!("{}", crate_error),
         backtrace: None,
     }
+    .into()
 }
 
 pub(super) fn render_jsonrpc_error(crate_error: CrateError) -> JsonRpcError {
     let prisma_error = render_error(crate_error);
 
     let error_rendering_result: Result<_, _> = match prisma_error {
-        user_facing_errors::Error::Known(known) => serde_json::to_value(prisma_error).map(|data| {
+        user_facing_errors::Error::Known(known) => serde_json::to_value(known).map(|data| {
             JsonRpcError {
                 // We separate the JSON-RPC error code (defined by the JSON-RPC spec) from the
                 // prisma error code, which is located in `data`.
@@ -26,6 +27,7 @@ pub(super) fn render_jsonrpc_error(crate_error: CrateError) -> JsonRpcError {
                 data: Some(data),
             }
         }),
+        user_facing_errors::Error::Unknown(unknown) => unimplemented!("unknown error rendering"),
     };
 
     match error_rendering_result {
