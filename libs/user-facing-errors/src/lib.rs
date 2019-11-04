@@ -34,3 +34,22 @@ pub struct UnknownError {
     pub message: String,
     pub backtrace: Option<String>,
 }
+
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum Error {
+    Known(KnownError),
+    Unknown(UnknownError),
+}
+
+impl From<UnknownError> for Error {
+    fn from(unknown_error: UnknownError) -> Self {
+        Error::Unknown(unknown_error)
+    }
+}
+
+impl From<KnownError> for Error {
+    fn from(known_error: KnownError) -> Self {
+        Error::Known(known_error)
+    }
+}

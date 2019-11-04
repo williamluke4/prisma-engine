@@ -10,6 +10,7 @@ datamodel = { path = "../../libs/datamodel" }
 prisma-models = { path = "../../prisma-models" }
 sql-migration-connector = { path = "../connectors/sql-migration-connector" }
 sql-connection = { path = "../../libs/sql-connection" }
+user-facing-errors = { path = "../../libs/user-facing-errors" }
 clap = "2.33"
 itertools = "0.8"
 

@@ -1271,6 +1271,7 @@ dependencies = [
  "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-threadpool 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "user-facing-errors 0.1.0",
 ]
 
 [[package]]
